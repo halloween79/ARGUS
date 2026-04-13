@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}All Images{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>All Images</h1>
+    <p class="subtitle">Browse all captured night sky images</p>
+</div>
+
+<div class="toolbar">
+    <div class="filter-group">
+        <label for="date-filter">Filter by Date</label>
+        <input type="date" id="date-filter" onchange="loadImages(1)">
+        <button class="btn btn-secondary" onclick="clearFilter()">Clear</button>
+    </div>
+    <button class="btn btn-primary" onclick="downloadZip()">⬇ Download ZIP</button>
+</div>
+
+<div class="gallery" id="gallery">
+    <p class="loading">Loading images...</p>
+</div>
+
+<div class="pagination" id="pagination"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPage = 1;
+
+function loadImages(page) {
+    currentPage = page;
+    const date  = document.getElementById('date-filter').value;
+    let url     = `/api/images?page=${page}&per_page=12`;
+    if (date) url += `&date=${date}`;
+
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            const gallery = document.getElementById('gallery');
+            if (data.images.length === 0) {
+                gallery.innerHTML = '<p class="empty">No images found.</p>';
+            } else {
+                gallery.innerHTML = data.images.map(img => `
+                    <div class="thumb-card">
+                        <img src="${img.filepath}" alt="${img.filename}"
+                             onerror="this.src='/static/placeholder.png'">
+                        <p class="thumb-name">${img.filename}</p>
+                        <p class="thumb-date">${new Date(img.captured_at).toLocaleString()}</p>
+                        ${img.sdr_confirmed ? '<span class="badge badge-sdr">SDR ✓</span>' : ''}
+                    </div>
+                `).join('');
+            }
+            renderPagination(data.pages, data.page);
+        });
+}
+
+function renderPagination(pages, current) {
+    const el = document.getElementById('pagination');
+    let html = '';
+    for (let i = 1; i <= pages; i++) {
+        html += `<button class="btn ${i === current ? 'btn-primary' : 'btn-secondary'}"
+                         onclick="loadImages(${i})">${i}</button>`;
+    }
+    el.innerHTML = html;
+}
+
+function clearFilter() {
+    document.getElementById('date-filter').value = '';
+    loadImages(1);
+}
+
+function downloadZip() {
+    const date = document.getElementById('date-filter').value;
+    let url    = '/api/images/download-zip';
+    if (date) url += `?date=${date}`;
+    window.location.href = url;
+}
+
+loadImages(1);
+</script>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>System Status</h1>
+    <p class="subtitle">Live overview of the ARGUS meteor detection system</p>
+</div>
+
+<div class="status-grid">
+    <div class="status-card" id="capture-status">
+        <h3>Capture State</h3>
+        <p class="status-value" id="capture-state">Loading...</p>
+    </div>
+    <div class="status-card">
+        <h3>Scheduled Window</h3>
+        <p class="status-value" id="schedule">Loading...</p>
+    </div>
+    <div class="status-card">
+        <h3>Last CNN Result</h3>
+        <p class="status-value" id="last-cnn">Loading...</p>
+    </div>
+    <div class="status-card">
+        <h3>Last SDR Event</h3>
+        <p class="status-value" id="last-sdr">Loading...</p>
+    </div>
+    <div class="status-card">
+        <h3>Total Images</h3>
+        <p class="status-value" id="total-images">Loading...</p>
+    </div>
+    <div class="status-card">
+        <h3>Meteors Detected</h3>
+        <p class="status-value" id="total-meteors">Loading...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateStatus() {
+    fetch('/api/status')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('capture-state').textContent =
+                data.capture_active ? '🟢 Active' : '🔴 Inactive';
+            document.getElementById('schedule').textContent =
+                data.start_time + ' – ' + data.end_time;
+        });
+
+    fetch('/api/images?per_page=1')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('total-images').textContent = data.total;
+        });
+
+    fetch('/api/meteors?per_page=1')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('total-meteors').textContent = data.total;
+            document.getElementById('last-cnn').textContent =
+                data.total > 0 ? '☄️ Meteor detected' : 'No meteor';
+        });
+}
+
+updateStatus();
+setInterval(updateStatus, 5000);
+</script>
+{% endblock %}

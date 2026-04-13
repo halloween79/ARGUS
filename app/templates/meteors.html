@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Detected Meteors{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Detected Meteors</h1>
+    <p class="subtitle">Images classified as meteors by the CNN (confidence > 50%)</p>
+</div>
+
+<div class="toolbar">
+    <button class="btn btn-primary" onclick="downloadZip()">⬇ Download ZIP</button>
+    <p class="total-count" id="total-count"></p>
+</div>
+
+<div class="gallery" id="gallery">
+    <p class="loading">Loading meteors...</p>
+</div>
+
+<div class="pagination" id="pagination"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPage = 1;
+
+function loadMeteors(page) {
+    currentPage = page;
+    fetch(`/api/meteors?page=${page}&per_page=12`)
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('total-count').textContent =
+                `${data.total} meteor(s) detected`;
+
+            const gallery = document.getElementById('gallery');
+            if (data.images.length === 0) {
+                gallery.innerHTML = '<p class="empty">No meteors detected yet.</p>';
+            } else {
+                gallery.innerHTML = data.images.map(img => `
+                    <div class="thumb-card meteor-card">
+                        <img src="${img.filepath}" alt="${img.filename}"
+                             onerror="this.src='/static/placeholder.png'">
+                        <p class="thumb-name">${img.filename}</p>
+                        <p class="thumb-date">${new Date(img.captured_at).toLocaleString()}</p>
+                        <span class="badge badge-confidence">
+                            ☄️ ${(img.cnn_confidence * 100).toFixed(1)}%
+                        </span>
+                        ${img.sdr_confirmed ? '<span class="badge badge-sdr">SDR ✓</span>' : ''}
+                    </div>
+                `).join('');
+            }
+            renderPagination(data.pages, data.page);
+        });
+}
+
+function renderPagination(pages, current) {
+    const el = document.getElementById('pagination');
+    let html = '';
+    for (let i = 1; i <= pages; i++) {
+        html += `<button class="btn ${i === current ? 'btn-primary' : 'btn-secondary'}"
+                         onclick="loadMeteors(${i})">${i}</button>`;
+    }
+    el.innerHTML = html;
+}
+
+function downloadZip() {
+    window.location.href = '/api/images/download-zip';
+}
+
+loadMeteors(1);
+setInterval(() => loadMeteors(currentPage), 10000);
+</script>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Configuration{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Configuration</h1>
+    <p class="subtitle">Set observation window and control capture</p>
+</div>
+
+<div class="config-card">
+    <h2>Observation Window</h2>
+    <div class="form-group">
+        <label for="start-time">Start Time</label>
+        <input type="time" id="start-time" value="{{ status.start_time }}">
+    </div>
+    <div class="form-group">
+        <label for="end-time">End Time</label>
+        <input type="time" id="end-time" value="{{ status.end_time }}">
+    </div>
+    <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+    <p id="save-msg" class="save-msg"></p>
+</div>
+
+<div class="config-card">
+    <h2>Quick Controls</h2>
+    <div class="button-row">
+        <button class="btn btn-success" onclick="setCapture(true)">▶ Start Capture</button>
+        <button class="btn btn-danger"  onclick="setCapture(false)">■ Stop Capture</button>
+    </div>
+    <p class="status-value" id="capture-state">
+        Current: {{ 'Active' if status.capture_active else 'Inactive' }}
+    </p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function saveSettings() {
+    const start = document.getElementById('start-time').value;
+    const end   = document.getElementById('end-time').value;
+    fetch('/api/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ start_time: start, end_time: end })
+    })
+    .then(r => r.json())
+    .then(() => {
+        const msg = document.getElementById('save-msg');
+        msg.textContent = '✅ Settings saved!';
+        setTimeout(() => msg.textContent = '', 3000);
+    });
+}
+
+function setCapture(active) {
+    fetch('/api/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ capture_active: active })
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('capture-state').textContent =
+            'Current: ' + (data.capture_active ? 'Active' : 'Inactive');
+    });
+}
+</script>
+{% endblock %}
