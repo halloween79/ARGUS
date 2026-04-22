@@ -119,3 +119,46 @@ def download_zip():
     return send_file(buf, mimetype='application/zip',
                      as_attachment=True,
                      download_name='argus_images.zip')
+
+
+# ── Pi Upload Endpoint ─────────────────────────────────────
+@main.route('/api/upload', methods=['POST'])
+def api_upload():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image file provided'}), 400
+
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'error': 'Empty filename'}), 400
+
+    upload_folder = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)),
+        'app', 'static', 'images'
+    )
+    os.makedirs(upload_folder, exist_ok=True)
+
+    filename  = file.filename
+    filepath  = os.path.join(upload_folder, filename)
+    file.save(filepath)
+
+    cnn_confidence = float(request.form.get('cnn_confidence', 0.0))
+    is_meteor      = request.form.get('is_meteor', 'false').lower() == 'true'
+    sdr_confirmed  = request.form.get('sdr_confirmed', 'false').lower() == 'true'
+
+    image = Image(
+        filename      = filename,
+        filepath      = filepath,
+        captured_at   = datetime.utcnow(),
+        is_meteor     = is_meteor,
+        cnn_confidence= cnn_confidence,
+        sdr_confirmed = sdr_confirmed,
+        uploaded_to_s3= False
+    )
+    db.session.add(image)
+    db.session.commit()
+
+    return jsonify({
+        'success':  True,
+        'id':       image.id,
+        'filename': image.filename
+    }), 201
