@@ -16,7 +16,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 # ── CONFIG – only thing you need to change ─────────────────
-RENDER_URL   = "https://argus.onrender.com"   # Your Render URL
+RENDER_URL   = "https://argus-1dqa.onrender.com/"   # Your Render URL
 WATCH_FOLDER = "/home/pi/argus_images"        # Folder Pi saves images to
 # ───────────────────────────────────────────────────────────
 
