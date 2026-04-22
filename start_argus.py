@@ -18,7 +18,7 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-RENDER_URL   = "https://argus.onrender.com"
+RENDER_URL   = "https://argus-1dqa.onrender.com/"
 WATCH_FOLDER = "/home/pi/argus_images"
 
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
